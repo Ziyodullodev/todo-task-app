@@ -1,31 +1,10 @@
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
 from rest_framework.response import Response
 from django.contrib.auth.models import User
 from rest_framework.views import APIView
 from .serializers import UserSerializer
 from rest_framework import status
-
-
-
-class UserAPIView(APIView):
-    def get(self, request):
-        get_all_users = User.objects.all()
-        users = UserSerializer(get_all_users, many=True)
-        return Response(
-            {
-                "status": "success",
-                "users": users.data,
-            }, status=status.HTTP_200_OK)
-
-    def post(self, request):
-        pass
-
-    def put(self, request):
-        pass
-
-    def delete(self, request):
-        pass
-
-
 
 class LoginAPIView(APIView):
     def post(self, request):
@@ -38,8 +17,38 @@ class LoginAPIView(APIView):
                     "error": "Please provide both username and password"
                 }, status=status.HTTP_400_BAD_REQUEST
             )
-        print(username, password)
+        user = authenticate(username=username, password=password)
+        if not user:
+            return Response(
+                {
+                    "error": "Invalid Credentials"
+                }, status=status.HTTP_404_NOT_FOUND
+            )
+        user_serializer = UserSerializer(user)
+        token = Token.objects.get_or_create(user=user)
         return Response({
             "status": "success",
-            "message": "Login successful"
+            "user": user_serializer.data,
+            "token": str(token[0]),
         }, status=status.HTTP_200_OK)
+
+
+class RegisterAPIView(APIView):
+    def post(self, request):
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            token = Token.objects.get_or_create(user=serializer.instance)
+            return Response(
+                {
+                    "status": "success",
+                    "user": serializer.data,
+                    "token": str(token[0]),
+                }, status=status.HTTP_201_CREATED
+            )
+        return Response(
+            {
+                "status": "error",
+                "errors": serializer.errors,
+            }, status=status.HTTP_400_BAD_REQUEST
+        )

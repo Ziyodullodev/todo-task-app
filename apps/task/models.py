@@ -25,14 +25,20 @@ class Task(models.Model):
     task_list = models.ForeignKey(TaskList, on_delete=models.CASCADE, blank=True, null=True)
     title = models.CharField(_("Title"), max_length=100)
     description = models.TextField(_("Description"), blank=True, null=True)
-    task_date = models.DateField(_("Task date"), blank=True, null=True)
+    task_date = models.DateField(_("Task date"), default=timezone.now)
     task_time = models.TimeField(_("Task time"), blank=True, null=True)
-    created_at = models.DateTimeField(_("Created at"), default=timezone.now)
-    updated_at = models.DateTimeField(_("Updated at"), default=timezone.now)
+    created_at = models.DateTimeField(_("Created at"), auto_now_add=True)
+    updated_at = models.DateTimeField(_("Updated at"), auto_now=True)
     completed = models.BooleanField(_("Completed"), default=False)
 
     def __str__(self):
         return self.title
+
+    def save(self, *args, **kwargs):
+        if self.task_time is None:
+            self.task_time = timezone.now() + timezone.timedelta(hours=1)
+        self.updated_at = timezone.now()
+        super(Task, self).save(*args, **kwargs)
 
     class Meta:
         ordering = ["-created_at"]
