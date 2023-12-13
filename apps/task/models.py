@@ -8,7 +8,7 @@ from django.utils import timezone
 class TaskList(models.Model):
     title = models.CharField(_("Title"), max_length=100)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    color = models.CharField(_("Color"), max_length=100, blank=True, null=True)
+    color = models.CharField(_("Color"), max_length=100, default="#808080")
     created_at = models.DateTimeField(_("Created at"), default=timezone.now)
 
     def __str__(self):
